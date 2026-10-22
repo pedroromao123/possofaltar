@@ -812,7 +812,7 @@ function enablePush(){
 }
 function testAviso(){
   toast('Enviando…');
-  CL.sb.functions.invoke('daily',{body:{teste:true}}).then(function(r){
+  CL.sb.functions.invoke(PFC.FN_DAILY||'daily',{body:{teste:true}}).then(function(r){
     if(r.error){toast('Falhou: '+(r.error.message||'erro'));return}
     var d=r.data||{}; toast(d.erro?d.erro:(d.enviados?'Aviso enviado. Confira!':'Nada enviado'));
   });
@@ -884,7 +884,7 @@ function tokenHtml(p,done){
   return '<h3 style="font-size:20px;margin-bottom:6px">Você faltou hoje?</h3><p class="muted" style="margin-bottom:16px">'+fmt(p.marcar,true)+' · '+mat+'</p><button class="btn block" data-act="tk-ok">Sim, faltei</button><button class="btn ghost block" style="margin-top:10px" data-act="closesheet">Não, eu fui</button>';
 }
 function tokenCall(undo){
-  return fetch(PFC.SUPABASE_URL+'/functions/v1/marcar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({u:TK.u,d:TK.marcar,t:TK.t,desfazer:!!undo})}).then(function(r){return r.json()}).then(function(j){return !!(j&&j.ok)}).catch(function(){return false});
+  return fetch(PFC.SUPABASE_URL+'/functions/v1/'+(PFC.FN_MARCAR||'marcar'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({u:TK.u,d:TK.marcar,t:TK.t,desfazer:!!undo})}).then(function(r){return r.json()}).then(function(j){return !!(j&&j.ok)}).catch(function(){return false});
 }
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&CL.user&&CL.perfil)cloudPull()});
 
