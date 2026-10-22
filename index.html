@@ -814,7 +814,7 @@ function testAviso(){
   toast('Enviando…');
   CL.sb.functions.invoke(PFC.FN_DAILY||'daily',{body:{teste:true}}).then(function(r){
     if(r.error){toast('Falhou: '+(r.error.message||'erro'));return}
-    var d=r.data||{}; toast(d.erro?d.erro:(d.enviados?'Aviso enviado. Confira!':'Nada enviado'));
+    var d=r.data||{}; toast(d.erro?d.erro:(d.enviados?'Aviso enviado. Confira seu e-mail!':((d.erros&&d.erros[0])?String(d.erros[0]).slice(0,140):'Nada enviado')));
   });
 }
 function fv(id){var a=$('#'+id+'S');if(a&&$('#sheet').classList.contains('on'))return a.value||'';var b=$('#'+id);return (b&&b.value)||''}
