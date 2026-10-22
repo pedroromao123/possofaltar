@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Posso Faltar?</title>
+<meta name="description" content="Controle de presença da turma de Administração: quantas faltas você ainda pode ter.">
+<meta name="theme-color" content="#1E2A52">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Posso Faltar?">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F4F8; --card:#FFFFFF; --ink:#141A2B; --muted:#5B6480; --line:rgba(20,26,43,.11);
+  --accent:#3D4BC8; --on-accent:#FFFFFF; --head:#1E2A52; --on-head:#FFFFFF;
+  --ok:#17803F; --ok-bg:#E1F4E8; --warn:#8A5F00; --warn-bg:#FFEFC2; --bad:#C23232; --bad-bg:#FCE3E3;
+  --soft:#EBEEF6; --shadow:0 1px 2px rgba(20,26,43,.06),0 6px 18px rgba(20,26,43,.06);
+  --font:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --ios-bar:0px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1220; --card:#171C30; --ink:#EEF1FA; --muted:#9AA3BF; --line:rgba(238,241,250,.13);
+    --accent:#7C89F5; --on-accent:#0E1220; --head:#171C30; --on-head:#EEF1FA;
+    --ok:#4ADE80; --ok-bg:#123524; --warn:#FBC948; --warn-bg:#3A2E0B; --bad:#FF8A8A; --bad-bg:#3E1717;
+    --soft:#212745; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1220; --card:#171C30; --ink:#EEF1FA; --muted:#9AA3BF; --line:rgba(238,241,250,.13);
+  --accent:#7C89F5; --on-accent:#0E1220; --head:#171C30; --on-head:#EEF1FA;
+  --ok:#4ADE80; --ok-bg:#123524; --warn:#FBC948; --warn-bg:#3A2E0B; --bad:#FF8A8A; --bad-bg:#3E1717;
+  --soft:#212745; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
+}
+@media (display-mode:browser){ @supports (-webkit-touch-callout:none){ :root{--ios-bar:72px} } }
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.45;min-height:100%;-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;touch-action:manipulation}
+.app{max-width:560px;margin:0 auto;min-height:100dvh;position:relative}
+
+/* topo */
+.top{background:var(--head);color:var(--on-head);padding:16px 18px 14px;position:sticky;top:0;z-index:20}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-weight:800;font-size:19px;letter-spacing:-.01em}
+.brand small{display:block;font-weight:600;font-size:11.5px;opacity:.7;letter-spacing:.02em;margin-top:1px}
+.datechip{font-weight:700;font-size:12.5px;background:rgba(255,255,255,.14);padding:7px 12px;border-radius:999px;white-space:nowrap}
+
+main{padding:16px 16px calc(96px + var(--ios-bar))}
+.view{display:none}.view.on{display:block;animation:rise .28s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h2{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:22px 2px 10px}
+h2:first-child{margin-top:4px}
+.card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:16px}
+.stack{display:grid;gap:12px}
+.muted{color:var(--muted)}
+.row{display:flex;align-items:center;gap:10px}
+.sp{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:14px;font-weight:700;background:var(--accent);color:var(--on-accent);transition:transform .12s,opacity .2s}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:var(--soft);color:var(--ink)}
+.btn.sm{min-height:38px;padding:0 14px;font-size:14px;border-radius:12px}
+.btn.danger{background:var(--bad-bg);color:var(--bad)}
+.btn.block{width:100%}
+
+/* veredito */
+.verdict{border-radius:24px;padding:20px 20px 18px;transition:background .3s,color .3s;position:relative;overflow:hidden}
+.verdict.ok{background:var(--ok-bg);color:var(--ok)}
+.verdict.warn{background:var(--warn-bg);color:var(--warn)}
+.verdict.bad{background:var(--bad-bg);color:var(--bad)}
+.verdict.none{background:var(--soft);color:var(--ink)}
+.verdict .k{font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;opacity:.85}
+.verdict .big{font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:6px 0 10px}
+.verdict .why{font-size:14.5px;font-weight:600;color:var(--ink);display:grid;gap:6px}
+.verdict .why div{display:flex;align-items:center;gap:8px}
+.verdict .note{font-size:12.5px;font-weight:600;color:var(--muted);margin-top:10px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--soft);color:var(--muted)}
+
+/* aulas do dia */
+.cls{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.cls:first-of-type{border-top:0}
+.cls b{font-weight:700}
+.cls .meta{font-size:12.5px;color:var(--muted)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.seg button{min-height:50px;border-radius:14px;font-weight:800;background:var(--soft);color:var(--muted);transition:background .2s,color .2s,transform .12s}
+.seg button:active{transform:scale(.97)}
+.seg button.on.go{background:var(--ok-bg);color:var(--ok)}
+.seg button.on.out{background:var(--bad-bg);color:var(--bad)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:0 12px;border-radius:12px;background:var(--soft);font-weight:700;font-size:13.5px;border:2px solid transparent}
+.chip.on{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.chip.on.plan{background:var(--warn-bg);color:var(--warn);border-color:var(--warn)}
+
+/* matérias */
+.sub{display:grid;gap:10px}
+.sub-h{display:flex;align-items:flex-start;gap:12px}
+.sub-h .nm{font-weight:800;font-size:16.5px;letter-spacing:-.01em}
+.sub-h .pf{font-size:12.5px;color:var(--muted)}
+.sub-h .tag{margin-left:auto;font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.tag.ok{background:var(--ok-bg);color:var(--ok)}.tag.warn{background:var(--warn-bg);color:var(--warn)}.tag.bad{background:var(--bad-bg);color:var(--bad)}
+.bar{height:12px;border-radius:999px;background:var(--soft);overflow:hidden;display:flex}
+.bar i{display:block;height:100%;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.bar .u{background:var(--ink);opacity:.82}
+.bar .p{background:repeating-linear-gradient(135deg,var(--warn) 0 4px,transparent 4px 8px);opacity:.9}
+.nums{display:flex;justify-content:space-between;font-size:13px;font-weight:700}
+.nums span:last-child{color:var(--muted);font-weight:600}
+.big-n{font-size:15px}
+.big-n b{font-size:22px;font-weight:800;letter-spacing:-.02em}
+
+/* calendário */
+.cal{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.cal .hd{font-size:11px;font-weight:800;color:var(--muted);text-align:center;letter-spacing:.04em;text-transform:uppercase;padding-bottom:2px}
+.wk{grid-column:1/-1;font-size:11.5px;font-weight:700;color:var(--muted);margin:8px 2px -2px}
+.cell{aspect-ratio:1/1.08;border-radius:12px;background:var(--card);box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;position:relative;font-weight:800;font-size:15px;border:2px solid transparent;transition:transform .12s}
+.cell:active{transform:scale(.94)}
+.cell .dots{display:flex;gap:3px;min-height:8px}
+.cell .dots i{width:8px;height:8px;border-radius:50%;display:block}
+.cell.abs{background:var(--bad-bg);color:var(--bad)}
+.cell.plan{background:var(--warn-bg);color:var(--warn);border:2px dashed var(--warn)}
+.cell.hol{background:var(--soft);color:var(--muted);box-shadow:none}
+.cell.ava{background:transparent;box-shadow:none;border:2px dashed var(--line);color:var(--muted)}
+.cell.today{border-color:var(--accent)}
+.cell .lb{position:absolute;bottom:3px;font-size:8.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;opacity:.85}
+.cell.blank{visibility:hidden}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;font-weight:600;color:var(--muted);margin-top:14px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:5px;display:block}
+
+/* planner */
+.dayrow{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
+.dayrow:first-child{border-top:0}
+.dayrow .d{width:54px;flex:none;font-weight:800;line-height:1.15}
+.dayrow .d small{display:block;font-size:11.5px;font-weight:600;color:var(--muted)}
+.dayrow .s{flex:1;display:flex;gap:5px;flex-wrap:wrap}
+.mini{font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--soft);display:inline-flex;align-items:center;gap:5px}
+.sw{width:50px;height:30px;border-radius:999px;background:var(--soft);position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.sw.on{background:var(--warn)}.sw.on::after{transform:translateX(20px)}
+.sw.accent.on{background:var(--accent)}
+.flag{font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px}
+.flag.ok{background:var(--ok-bg);color:var(--ok)}.flag.warn{background:var(--warn-bg);color:var(--warn)}.flag.bad{background:var(--bad-bg);color:var(--bad)}
+.field{display:grid;gap:6px}
+.field label{font-size:12.5px;font-weight:700;color:var(--muted)}
+.inp{min-height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);padding:0 12px;width:100%;font-weight:700}
+.inp:focus{outline:2px solid var(--accent);outline-offset:1px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.alert{border-radius:14px;padding:12px 14px;font-weight:600;font-size:14px}
+.alert.bad{background:var(--bad-bg);color:var(--bad)}.alert.warn{background:var(--warn-bg);color:var(--warn)}.alert.ok{background:var(--ok-bg);color:var(--ok)}
+
+/* ajustes */
+.setrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.setrow:first-child{border-top:0}
+.setrow .t{flex:1;font-weight:700}.setrow .t small{display:block;font-weight:500;color:var(--muted);font-size:12.5px}
+.num{width:76px;min-height:42px;text-align:center}
+ol.how{padding-left:20px;display:grid;gap:6px;color:var(--muted);font-size:14px}
+
+/* abas */
+.tabs{position:fixed;left:0;right:0;bottom:var(--ios-bar);z-index:30;display:flex;justify-content:center;pointer-events:none}
+.tabs nav{pointer-events:auto;width:100%;max-width:560px;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 6px 8px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;border-radius:12px;font-size:11px;font-weight:700;color:var(--muted);transition:color .2s}
+.tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--accent)}
+.tab.on svg{transform:translateY(-1px)}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(10,14,28,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .22s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;justify-content:center;transform:translateY(105%);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.sheet.on{transform:none}
+.sheet .in{width:100%;max-width:560px;background:var(--card);border-radius:24px 24px 0 0;padding:10px 18px calc(24px + var(--ios-bar));max-height:86dvh;overflow:auto}
+.grab{width:42px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 14px}
+.toast{position:fixed;left:50%;bottom:calc(92px + var(--ios-bar));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;font-weight:700;font-size:14px;opacity:0;transition:.25s;z-index:60;pointer-events:none;max-width:88vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (hover:hover){.btn:hover{opacity:.9}.cell:hover{transform:translateY(-1px)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="top-row">
+      <div class="brand">Posso Faltar?<small>Administração · Faculdade IBG · 2026/2</small></div>
+      <div class="datechip" id="chip"></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="view on" id="v-hoje"></section>
+    <section class="view" id="v-materias"></section>
+    <section class="view" id="v-calendario"></section>
+    <section class="view" id="v-ferias"></section>
+    <section class="view" id="v-ajustes"></section>
+  </main>
+
+  <div class="tabs"><nav id="tabs">
+    <button class="tab on" data-v="hoje"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg>Hoje</button>
+    <button class="tab" data-v="materias"><svg viewBox="0 0 24 24"><path d="M5 4.5h10a3 3 0 013 3V20H8a3 3 0 01-3-3z"/><path d="M5 17a3 3 0 013-3h10"/></svg>Matérias</button>
+    <button class="tab" data-v="calendario"><svg viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16"/></svg>Calendário</button>
+    <button class="tab" data-v="ferias"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0118 0z"/><path d="M12 12v7.5a2 2 0 004 0"/><path d="M12 3v1.5"/></svg>Férias</button>
+    <button class="tab" data-v="ajustes"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Ajustes</button>
+  </nav></div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"><div class="in" id="sheetIn"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============ DADOS DO CALENDÁRIO (2º bimestre, conforme cronograma do IBG) ============ */
+var SUBJ = {
+  EST:{name:'Estatística',       prof:'Danilo',        color:'#3B82F6'},
+  DIR:{name:'Noções do Direito', prof:'Ângela',        color:'#8B5CF6'},
+  SOC:{name:'Sociologia',        prof:'Wilson Ortega', color:'#F97316'},
+  MKT:{name:'Marketing',         prof:'Cristiana',     color:'#EC4899'},
+  ADM:{name:'Teorias ADM',       prof:'Juliano',       color:'#14B8A6'}
+};
+var CODES = ['EST','DIR','SOC','MKT','ADM'];
+var TPL = {1:['EST','DIR'],2:['EST','SOC'],3:['SOC','MKT'],4:['ADM','MKT'],5:['DIR','ADM']};
+// Cada semana: m = segunda-feira; d = exceções por dia da semana (1..5); sat = sábado
+var WEEKS = [
+  {m:'2026-10-26', sat:{kind:'ava', items:[['DIR',2]]}},
+  {m:'2026-11-02', d:{1:'F'}, sat:{kind:'sab', items:[['EST',2],['DIR',2]]}},
+  {m:'2026-11-09', sat:{kind:'sab', items:[['EST',2],['DIR',2]]}},
+  {m:'2026-11-16', d:{5:'F'}, sat:{kind:'sab', items:[['DIR',2],['ADM',2]]}},
+  {m:'2026-11-23', sat:{kind:'ava', items:[['ADM',2]]}},
+  {m:'2026-11-30', prova:true, d:{1:[['EST',4]],2:[['DIR',4]],3:[['SOC',4]],4:[['MKT',4]],5:[['ADM',4]]}, sat:{kind:'none'}},
+  {m:'2026-12-07', d:{4:'F'}, sat:{kind:'sab', items:[['ADM',2],['MKT',2]]}},
+  {m:'2026-12-14', d:{1:'PF',2:'PF',3:'V',4:'V',5:'V'}, sat:{kind:'V'}}
+];
+function pad(n){return (n<10?'0':'')+n}
+function iso(dt){return dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate())}
+function parse(s){var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2],12,0,0)}
+function addDays(s,n){var d=parse(s);d.setDate(d.getDate()+n);return iso(d)}
+var CAL = [];
+WEEKS.forEach(function(w){
+  for(var i=0;i<6;i++){
+    var date = addDays(w.m,i), dow=i+1, day={date:date,dow:dow,kind:'aula',items:[],prova:!!w.prova,wk:w.m};
+    if(dow<=5){
+      var ex = w.d && w.d[dow];
+      if(ex==='F'){day.kind='feriado'}
+      else if(ex==='PF'){day.kind='pf'}
+      else if(ex==='V'){day.kind='ferias'}
+      else if(ex){day.items=ex}
+      else {day.items=TPL[dow].map(function(c){return [c,2]})}
+    } else {
+      var s = w.sat||{kind:'none'};
+      day.kind = s.kind==='V'?'ferias':(s.kind==='none'?'sem':s.kind);
+      day.items = s.items||[];
+    }
+    CAL.push(day);
+  }
+});
+var BYDATE = {}; CAL.forEach(function(d){BYDATE[d.date]=d});
+var FIRST = CAL[0].date, LAST_CLASS = '2026-12-12';
+
+/* ============ ESTADO ============ */
+var KEY='posso-faltar-v1';
+function defaults(){return {v:1,limit:16,base:{EST:0,DIR:0,SOC:0,MKT:0,ADM:0},abs:{},plan:{},satAva:false,reminder:'22:00',onboarded:false}}
+var S = load();
+function load(){
+  try{var r=JSON.parse(localStorage.getItem(KEY)); if(r&&r.v===1){var d=defaults(); for(var k in d){if(!(k in r))r[k]=d[k]} return r}}catch(e){}
+  return defaults();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+var QS = new URLSearchParams(location.search);
+function realToday(){return iso(new Date())}
+function today(){var t=QS.get('hoje'); if(t&&/^\d{4}-\d{2}-\d{2}$/.test(t))return t; return realToday()}
+
+/* ============ CÁLCULOS ============ */
+function counted(day){
+  if(!day||!day.items||!day.items.length)return [];
+  if(day.kind==='ava'&&!S.satAva)return [];
+  return day.items;
+}
+function nOf(day,code){var it=counted(day),n=0;it.forEach(function(x){if(x[0]===code)n+=x[1]});return n}
+function usedOf(code,skipDate){
+  var u=+S.base[code]||0;
+  for(var dt in S.abs){if(dt===skipDate)continue;var day=BYDATE[dt]; if(!day)continue; if(S.abs[dt].indexOf(code)>-1)u+=nOf(day,code)}
+  return u;
+}
+function plannedOf(code,skipDate){
+  var p=0;
+  for(var dt in S.plan){
+    if(dt===skipDate)continue; var day=BYDATE[dt]; if(!day)continue;
+    var a=S.abs[dt]||[];
+    if(S.plan[dt].indexOf(code)>-1 && a.indexOf(code)<0)p+=nOf(day,code);
+  }
+  return p;
+}
+function remaining(code){return S.limit-usedOf(code)}
+function reserve(code,skipDate){return S.limit-usedOf(code,skipDate)-plannedOf(code,skipDate)}
+function futureDays(from){return CAL.filter(function(d){return d.date>=from&&counted(d).length})}
+function aulasLeft(code,from){var n=0;CAL.forEach(function(d){if(d.date>=from)n+=nOf(d,code)});return n}
+function diasLeft(r,per){return Math.max(0,Math.floor(r/(per||2)))}
+function status(r){return r<=1?'bad':(r<=5?'warn':'ok')}   // r = faltas restantes
+
+function verdict(day){
+  var it=counted(day); if(!it.length)return null;
+  var lines=[],worst='ok';
+  it.forEach(function(x){
+    var r=reserve(x[0],day.date), after=r-x[1], st=after<0?'bad':(after<=3?'warn':'ok');
+    var isAbs=(S.abs[day.date]||[]).indexOf(x[0])>-1;
+    lines.push({code:x[0],n:x[1],r:r,after:after,st:st,abs:isAbs});
+  });
+  var anyAbs=lines.some(function(l){return l.abs});
+  lines.forEach(function(l){ if(anyAbs&&!l.abs)return; if(l.st==='bad')worst='bad'; else if(l.st==='warn'&&worst!=='bad')worst='warn'; });
+  return {st:worst,lines:lines,done:anyAbs};
+}
+
+/* ============ UTIL DE TELA ============ */
+var $=function(s){return document.querySelector(s)};
+var WD=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+var WDS=['dom','seg','ter','qua','qui','sex','sáb'];
+var MS=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function fmt(s,long){var d=parse(s);return (long?WD[d.getDay()]+', ':WDS[d.getDay()]+' ')+d.getDate()+' de '+MS[d.getMonth()]}
+function dm(s){var d=parse(s);return pad(d.getDate())+'/'+pad(d.getMonth()+1)}
+function plural(n,a,b){return n+' '+(n===1?a:b)}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function dotsOf(items){return items.map(function(x){return '<span class="dot" style="background:'+SUBJ[x[0]].color+'"></span>'}).join('')}
+function toast(t){var e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){e.classList.remove('on')},2200)}
+function daysBetween(a,b){return Math.round((parse(b)-parse(a))/86400000)}
+
+/* marcar/desmarcar */
+function setAbs(date,codes){ if(codes.length)S.abs[date]=codes; else delete S.abs[date]; save() }
+function setPlan(date,codes){ if(codes.length)S.plan[date]=codes; else delete S.plan[date]; save() }
+function codesOf(day){var o=[];counted(day).forEach(function(x){if(o.indexOf(x[0])<0)o.push(x[0])});return o}
+function toggleIn(list,c){var i=list.indexOf(c);var n=list.slice();if(i>-1)n.splice(i,1);else n.push(c);return n}
+
+/* ============ HOJE ============ */
+function viewHoje(){
+  var t=today(), day=BYDATE[t], h='';
+  var focus=null, mode='today';
+  if(day&&counted(day).length){focus=day}
+  else{
+    var nx=futureDays(t).filter(function(d){return d.date>t})[0];
+    if(nx){focus=nx;mode=(t<FIRST)?'before':'next'} else mode='end';
+  }
+  if(!S.onboarded){
+    h+='<div class="card" style="margin-bottom:12px"><b>Antes de começar</b><p class="muted" style="margin:4px 0 12px">Se você já tem faltas do 1º bimestre, informe para a conta ficar certa.</p><div class="row"><button class="btn sm" data-act="goset">Informar faltas</button><button class="btn sm ghost" data-act="skipboard">Estou com zero</button></div></div>';
+  }
+  if(mode==='end'){
+    h+='<div class="verdict none"><div class="k">Bimestre encerrado</div><div class="big">Boas férias!</div><div class="why"><div>As aulas acabaram. Veja o resumo na aba Matérias.</div></div></div>';
+  } else {
+    var v=verdict(focus), cls=v.st, head, kicker;
+    if(mode==='today'){kicker='Hoje · '+fmt(t,true)}
+    else if(mode==='before'){var dd=daysBetween(t,FIRST);kicker='O bimestre começa em '+plural(dd,'dia','dias')}
+    else kicker='Sem aula hoje · próxima: '+fmt(focus.date,true);
+    head = v.done?'Falta registrada.':(cls==='ok'?'Pode faltar.':(cls==='warn'?'Cuidado.':'Não falte.'));
+    h+='<div class="verdict '+cls+'"><div class="k">'+esc(kicker)+'</div><div class="big">'+head+'</div><div class="why">';
+    v.lines.forEach(function(l){
+      var s=SUBJ[l.code], txt;
+      if(v.done){ txt = l.abs ? '<b>'+s.name+'</b>: falta registrada, '+(l.after<0?'passou '+Math.abs(l.after)+' do limite':'restam '+l.after) : '<b>'+s.name+'</b>: você foi, restam '+l.r }
+      else if(l.after<0) txt='<b>'+s.name+'</b>: faltando você passa do limite ('+plural(Math.abs(l.after),'falta a mais','faltas a mais')+')';
+      else txt='<b>'+s.name+'</b>: restam '+l.r+' → ficam '+l.after+' se faltar';
+      h+='<div><span class="dot" style="background:'+s.color+'"></span><span>'+txt+'</span></div>';
+    });
+    h+='</div>';
+    var pl=0;for(var k in S.plan)pl++;
+    if(pl)h+='<div class="note">Contando os '+plural(pl,'dia','dias')+' que você planejou na aba Férias.</div>';
+    h+='</div>';
+    if(mode==='today') h+=dayCard(focus,true);
+    else h+='<div class="card" style="margin-top:12px"><div class="row"><div><b>'+fmt(focus.date,true)+'</b><div class="meta muted" style="font-size:12.5px">Aulas: '+codesOf(focus).map(function(c){return SUBJ[c].name}).join(' e ')+'</div></div><div class="sp"></div><button class="btn sm ghost" data-act="openday" data-d="'+focus.date+'">Abrir</button></div></div>';
+  }
+  h+='<h2>Suas matérias</h2><div class="stack">'+CODES.map(miniSub).join('')+'</div>';
+  $('#v-hoje').innerHTML=h;
+}
+function miniSub(c){
+  var s=SUBJ[c],u=usedOf(c),p=plannedOf(c),r=S.limit-u,st=status(r);
+  return '<div class="card"><div class="row"><span class="dot" style="background:'+s.color+'"></span><b>'+s.name+'</b><div class="sp"></div><span class="tag '+st+' pill" style="font-weight:800">'+(r<0?'passou '+Math.abs(r):'restam '+r)+'</span></div>'+barHtml(u,p)+'</div>';
+}
+function barHtml(u,p){
+  var L=S.limit||1, uw=Math.min(100,u/L*100), pw=Math.min(100-uw,p/L*100);
+  return '<div class="bar" style="margin-top:10px"><i class="u" style="width:'+uw+'%"></i><i class="p" style="width:'+pw+'%"></i></div>';
+}
+
+/* cartão "fui / faltei" (hoje e folha do dia) */
+function dayCard(day,inline){
+  var t=today(), codes=codesOf(day), a=S.abs[day.date]||[], p=S.plan[day.date]||[];
+  var isFuture=day.date>t, h='<div class="card" style="margin-top:12px">';
+  h+='<div class="row"><b style="font-size:16px">'+fmt(day.date,true)+'</b><div class="sp"></div>'+(day.prova?'<span class="pill">semana de prova</span>':'')+'</div>';
+  day.items.forEach(function(x){var s=SUBJ[x[0]];
+    h+='<div class="cls"><span class="dot" style="background:'+s.color+'"></span><div><b>'+s.name+'</b><div class="meta">Prof. '+s.prof+' · '+plural(x[1],'aula','aulas')+'</div></div></div>';});
+  if(day.kind==='ava'&&!S.satAva) h+='<div class="alert warn" style="margin-top:10px">Sábado AVA (online): não está contando presença. Dá para mudar em Ajustes.</div>';
+  if(!isFuture){
+    var all=codes.length&&codes.every(function(c){return a.indexOf(c)>-1}), none=a.length===0;
+    h+='<div class="seg"><button class="go '+(none?'on':'')+'" data-act="present" data-d="'+day.date+'">Fui à aula</button><button class="out '+(!none?'on':'')+'" data-act="absent" data-d="'+day.date+'">Faltei</button></div>';
+    if(!none&&codes.length>1){h+='<div class="muted" style="font-size:12.5px;margin-top:10px">Faltou só em uma matéria? Toque para ajustar:</div><div class="chips">'+codes.map(function(c){return '<button class="chip '+(a.indexOf(c)>-1?'on':'')+'" data-act="tg" data-d="'+day.date+'" data-c="'+c+'"><span class="dot" style="background:'+SUBJ[c].color+'"></span>'+SUBJ[c].name+'</button>'}).join('')+'</div>'}
+    if(p.length&&none)h+='<div class="alert warn" style="margin-top:10px">Você tinha planejado faltar neste dia. <button class="btn sm" style="margin-left:6px" data-act="absent" data-d="'+day.date+'">Faltei mesmo</button></div>';
+  } else {
+    h+='<div class="muted" style="font-size:13px;margin:10px 0 2px">Ainda não chegou. Quer planejar faltar neste dia?</div><div class="chips">'+codes.map(function(c){return '<button class="chip plan '+(p.indexOf(c)>-1?'on':'')+'" data-act="tp" data-d="'+day.date+'" data-c="'+c+'"><span class="dot" style="background:'+SUBJ[c].color+'"></span>'+SUBJ[c].name+'</button>'}).join('')+'</div>';
+    h+='<button class="btn sm ghost block" style="margin-top:12px" data-act="plandayall" data-d="'+day.date+'">'+(p.length?'Tirar do planejamento':'Planejar faltar o dia todo')+'</button>';
+  }
+  h+='</div>';
+  return h;
+}
+
+/* ============ MATÉRIAS ============ */
+function viewMaterias(){
+  var t=today(), from=t<FIRST?FIRST:t, h='<h2>Faltas por matéria</h2><div class="stack">';
+  CODES.forEach(function(c){
+    var s=SUBJ[c],u=usedOf(c),p=plannedOf(c),r=S.limit-u,st=status(r),dias=diasLeft(r,2),left=aulasLeft(c,from);
+    h+='<div class="card sub"><div class="sub-h"><span class="dot" style="background:'+s.color+';margin-top:7px"></span><div><div class="nm">'+s.name+'</div><div class="pf">Prof. '+s.prof+'</div></div><span class="tag '+st+'">'+(r<0?'Passou do limite':(r<=1?'No limite':(r<=5?'Atenção':'Tranquilo')))+'</span></div>'+
+      barHtml(u,p)+
+      '<div class="nums"><span>'+u+' de '+S.limit+' faltas usadas</span><span>'+(r<0?'Limite estourado':'Restam '+r)+'</span></div>'+
+      '<div class="big-n">'+(r<0?'<b>0</b> dias de folga':'Pode faltar mais <b>'+dias+'</b> '+(dias===1?'dia':'dias'))+' <span class="muted">· '+plural(left,'aula','aulas')+' ainda no bimestre</span></div></div>';
+  });
+  h+='</div><p class="muted" style="margin:14px 4px;font-size:12.5px">Cada dia de falta soma 2 faltas em cada uma das duas matérias do dia. Semana de prova: 4 aulas da mesma matéria no dia.</p>';
+  $('#v-materias').innerHTML=h;
+}
+
+/* ============ CALENDÁRIO ============ */
+function viewCal(){
+  var t=today(), h='<h2>2º bimestre · 26/10 a 15/12</h2><div class="cal">';
+  ['Seg','Ter','Qua','Qui','Sex','Sáb'].forEach(function(x){h+='<div class="hd">'+x+'</div>'});
+  var lastWk='';
+  CAL.forEach(function(d){
+    if(d.dow===1){var e=addDays(d.date,5);h+='<div class="wk">'+dm(d.date)+' a '+dm(e)+(d.prova?' · semana de prova':'')+'</div>'}
+    var cls='cell', lb='';
+    var isCnt=counted(d).length>0, a=S.abs[d.date], p=S.plan[d.date];
+    if(d.kind==='feriado'){cls+=' hol';lb='feriado'}
+    else if(d.kind==='pf'){cls+=' hol';lb='P. final'}
+    else if(d.kind==='ferias'){cls+=' hol';lb='férias'}
+    else if(d.kind==='sem'){cls+=' hol';lb='AVA'}
+    else if(d.kind==='ava'&&!S.satAva){cls+=' ava';lb='AVA'}
+    if(a&&a.length)cls+=' abs'; else if(p&&p.length)cls+=' plan';
+    if(d.date===t)cls+=' today';
+    var clickable=isCnt||(d.kind==='ava');
+    h+='<button class="'+cls+'" '+(isCnt?'data-act="openday" data-d="'+d.date+'"':'data-act="noop"')+'><span>'+parse(d.date).getDate()+'</span><span class="dots">'+(isCnt?dotsOf(d.items):'')+'</span>'+(lb?'<span class="lb">'+lb+'</span>':'')+'</button>';
+  });
+  h+='</div><div class="legend"><span><i style="background:var(--bad-bg);border:1px solid var(--bad)"></i>Faltei</span><span><i style="background:var(--warn-bg);border:2px dashed var(--warn)"></i>Planejado</span><span><i style="background:var(--soft)"></i>Sem aula</span><span><i style="border:2px solid var(--accent)"></i>Hoje</span></div>';
+  h+='<p class="muted" style="margin:12px 2px;font-size:12.5px">Toque em um dia para marcar falta (dias que já passaram) ou planejar (dias futuros). Por padrão, todo dia conta como presença.</p>';
+  $('#v-calendario').innerHTML=h;
+}
+
+/* ============ FÉRIAS (planejador) ============ */
+function viewFerias(){
+  var t=today(), from=t<FIRST?FIRST:t, days=futureDays(from).filter(function(d){return d.date>=from});
+  var h='<h2>Planejador de férias</h2><div class="card"><p class="muted" style="margin-bottom:12px">Escolha os dias que pretende faltar e veja quanto sobra em cada matéria.</p>';
+  h+='<div class="grid2"><div class="field"><label>De</label><input class="inp" type="date" id="pf1" min="'+from+'" max="'+LAST_CLASS+'"></div><div class="field"><label>Até</label><input class="inp" type="date" id="pf2" min="'+from+'" max="'+LAST_CLASS+'"></div></div>';
+  h+='<div class="grid2" style="margin-top:10px"><button class="btn sm" data-act="planrange">Planejar esse período</button><button class="btn sm ghost" data-act="planclear">Limpar plano</button></div></div>';
+
+  h+='<h2>Como fica com o seu plano</h2><div class="stack">';
+  var bad=[];
+  CODES.forEach(function(c){
+    var s=SUBJ[c],u=usedOf(c),p=plannedOf(c),r=S.limit-u-p,st=r<0?'bad':(r<=1?'warn':'ok');
+    if(r<0)bad.push(s.name);
+    h+='<div class="card"><div class="row"><span class="dot" style="background:'+s.color+'"></span><b>'+s.name+'</b><div class="sp"></div><span class="flag '+st+'">'+(r<0?'estoura em '+Math.abs(r):'sobram '+r)+'</span></div>'+barHtml(u,p)+'<div class="nums" style="margin-top:8px"><span>'+u+' usadas + '+p+' planejadas</span><span>limite '+S.limit+'</span></div></div>';
+  });
+  h+='</div>';
+  if(bad.length)h+='<div class="alert bad" style="margin-top:12px">Esse plano estoura o limite em: '+bad.join(', ')+'. Tire algum dia para voltar ao seguro.</div>';
+  else{var pl=0;for(var k in S.plan)pl++; if(pl)h+='<div class="alert ok" style="margin-top:12px">Plano dentro do limite em todas as matérias.</div>'}
+
+  h+='<h2>Dias que ainda restam</h2><div class="card" style="padding:6px 16px">';
+  if(!days.length)h+='<p class="muted" style="padding:12px 0">Não há mais dias de aula.</p>';
+  days.forEach(function(d){
+    var p=S.plan[d.date]||[], inPlan=p.length>0, flag='';
+    if(!inPlan){
+      var worst='ok';counted(d).forEach(function(x){var after=reserve(x[0])-x[1];if(after<0)worst='bad';else if(after<=1&&worst!=='bad')worst='warn'});
+      flag='<span class="flag '+worst+'">'+(worst==='bad'?'estoura':(worst==='warn'?'no limite':'dá'))+'</span>';
+    }
+    h+='<div class="dayrow"><div class="d">'+dm(d.date)+'<small>'+WDS[parse(d.date).getDay()]+(d.prova?' · prova':'')+'</small></div><div class="s">'+counted(d).map(function(x){return '<span class="mini"><span class="dot" style="background:'+SUBJ[x[0]].color+';width:8px;height:8px"></span>'+SUBJ[x[0]].name.split(' ')[0]+'</span>'}).join('')+'</div>'+flag+'<button class="sw '+(inPlan?'on':'')+'" data-act="plandayall" data-d="'+d.date+'" aria-label="Planejar faltar em '+dm(d.date)+'"></button></div>';
+  });
+  h+='</div>';
+  $('#v-ferias').innerHTML=h;
+}
+
+/* ============ AJUSTES ============ */
+function viewAjustes(){
+  var h='<h2>Faltas do 1º bimestre</h2><div class="card"><p class="muted" style="margin-bottom:10px">Quantas faltas (aulas) você já tem em cada matéria antes de 26/10?</p>';
+  CODES.forEach(function(c){h+='<div class="setrow"><span class="dot" style="background:'+SUBJ[c].color+'"></span><div class="t">'+SUBJ[c].name+'</div><input class="inp num" type="number" inputmode="numeric" min="0" max="99" value="'+(S.base[c]||0)+'" data-base="'+c+'"></div>'}); 
+  h+='<div class="setrow"><div class="t">Limite de faltas por matéria<small>Regra da turma: 16</small></div><input class="inp num" type="number" inputmode="numeric" min="1" max="99" value="'+S.limit+'" id="lim"></div></div>';
+
+  h+='<h2>Regras</h2><div class="card"><div class="setrow"><div class="t">Contar sábados de AVA<small>31/10 e 28/11 (online). Sábados com aula normal sempre contam.</small></div><button class="sw accent '+(S.satAva?'on':'')+'" data-act="satava" aria-label="Contar sábados AVA"></button></div></div>';
+
+  h+='<h2>Lembrete diário</h2><div class="card"><p class="muted" style="margin-bottom:12px">Baixe um arquivo para o calendário do celular. Todo dia de aula, no horário escolhido, ele avisa: “Você foi à aula hoje?”.</p><div class="row"><div class="field" style="flex:1"><label>Horário do lembrete</label><input class="inp" type="time" id="rem" value="'+S.reminder+'"></div><button class="btn" style="align-self:end" data-act="ics">Baixar lembretes</button></div></div>';
+
+  h+='<h2>Instalar como app</h2><div class="card"><ol class="how"><li><b>iPhone:</b> abra no Safari, toque em Compartilhar e em “Adicionar à Tela de Início”.</li><li><b>Android:</b> no Chrome, toque nos três pontinhos e em “Instalar app”.</li></ol><div class="row" style="margin-top:14px"><button class="btn sm" data-act="share">Convidar a turma</button></div></div>';
+
+  h+='<h2>Seus dados</h2><div class="card"><p class="muted" style="margin-bottom:12px">Tudo fica salvo só neste celular. Se trocar de aparelho, faça um backup.</p><div class="grid2"><button class="btn sm ghost" data-act="export">Fazer backup</button><label class="btn sm ghost" style="cursor:pointer">Restaurar<input type="file" accept="application/json" id="imp" hidden></label></div><button class="btn sm danger block" style="margin-top:10px" data-act="reset">Apagar tudo</button></div>';
+
+  h+='<h2>Testar</h2><div class="card"><div class="field"><label>Fingir que hoje é outro dia (só para testar)</label><input class="inp" type="date" id="sim" min="'+FIRST+'" max="2026-12-19" value="'+(QS.get('hoje')||'')+'"></div><p class="muted" style="font-size:12.5px;margin-top:8px">Deixe vazio para usar a data real.</p></div>';
+  $('#v-ajustes').innerHTML=h;
+}
+
+/* lembretes .ics */
+function icsFile(){
+  var tm=(S.reminder||'22:00').replace(':',''), L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Posso Faltar//PT','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Posso Faltar? (lembretes)'];
+  CAL.forEach(function(d,i){
+    if(!counted(d).length)return;
+    var ymd=d.date.replace(/-/g,''), mins=Math.min(23*60+59,(+tm.slice(0,2))*60+(+tm.slice(2))+15), end=pad(Math.floor(mins/60))+pad(mins%60)+'00';
+    L.push('BEGIN:VEVENT','UID:pf-'+ymd+'@posso-faltar','DTSTAMP:20261022T120000Z','DTSTART:'+ymd+'T'+tm+'00','DTEND:'+ymd+'T'+end,
+      'SUMMARY:Você foi à aula hoje? Marque no Posso Faltar?',
+      'DESCRIPTION:Aulas de hoje: '+codesOf(d).map(function(c){return SUBJ[c].name}).join(' e ')+'. Se faltou\\, marque no app.',
+      'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Você foi à aula hoje?','TRIGGER:PT0M','END:VALARM','END:VEVENT');
+  });
+  L.push('END:VCALENDAR'); return L.join('\r\n');
+}
+function download(name,type,text){
+  var b=new Blob([text],{type:type}),a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);
+}
+
+/* ============ SHEET ============ */
+function openSheet(html){$('#sheetIn').innerHTML='<div class="grab"></div>'+html;$('#scrim').classList.add('on');$('#sheet').classList.add('on')}
+function closeSheet(){$('#scrim').classList.remove('on');$('#sheet').classList.remove('on')}
+var sheetDate=null;
+function openDay(date){sheetDate=date;var d=BYDATE[date];openSheet(dayCard(d).replace('class="card" style="margin-top:12px"','style="margin:0"'))}
+
+/* ============ RENDER ============ */
+var cur='hoje';
+function render(){
+  $('#chip').textContent=fmt(today(),false);
+  viewHoje();viewMaterias();viewCal();viewFerias();viewAjustes();
+  if(sheetDate&&$('#sheet').classList.contains('on')){var d=BYDATE[sheetDate];$('#sheetIn').innerHTML='<div class="grab"></div>'+dayCard(d).replace('class="card" style="margin-top:12px"','style="margin:0"')}
+}
+function go(v){
+  cur=v;document.querySelectorAll('.view').forEach(function(e){e.classList.toggle('on',e.id==='v-'+v)});
+  document.querySelectorAll('.tab').forEach(function(e){e.classList.toggle('on',e.dataset.v===v)});
+  window.scrollTo(0,0);
+}
+
+/* ============ EVENTOS ============ */
+document.addEventListener('click',function(e){
+  var tabEl=e.target.closest('.tab'); if(tabEl){go(tabEl.dataset.v);return}
+  if(e.target.id==='scrim'){closeSheet();return}
+  var el=e.target.closest('[data-act]'); if(!el)return;
+  var act=el.dataset.act, d=el.dataset.d, c=el.dataset.c, day=d&&BYDATE[d];
+  switch(act){
+    case 'openday': openDay(d); break;
+    case 'present': setAbs(d,[]); render(); break;
+    case 'absent': setAbs(d,codesOf(day)); var pl=(S.plan[d]||[]); if(pl.length)setPlan(d,[]); render(); toast('Falta marcada em '+dm(d)); break;
+    case 'tg': setAbs(d,toggleIn(S.abs[d]||[],c)); render(); break;
+    case 'tp': setPlan(d,toggleIn(S.plan[d]||[],c)); render(); break;
+    case 'plandayall':
+      if((S.plan[d]||[]).length)setPlan(d,[]); else setPlan(d,codesOf(day));
+      render(); break;
+    case 'planrange':
+      var a=$('#pf1').value,b=$('#pf2').value;
+      if(!a||!b){toast('Escolha as duas datas');break}
+      if(b<a){var tmp=a;a=b;b=tmp}
+      var n=0;CAL.forEach(function(x){if(x.date>=a&&x.date<=b&&counted(x).length&&x.date>(today()>FIRST?addDays(today(),-1):'0000')){setPlan(x.date,codesOf(x));n++}});
+      render();toast(n?plural(n,'dia planejado','dias planejados'):'Nenhum dia de aula nesse período');break;
+    case 'planclear': S.plan={};save();render();toast('Plano limpo');break;
+    case 'goset': go('ajustes'); break;
+    case 'skipboard': S.onboarded=true;save();render();break;
+    case 'satava': S.satAva=!S.satAva;save();render();break;
+    case 'ics':
+      var r=$('#rem');if(r&&r.value){S.reminder=r.value;save()}
+      download('lembretes-posso-faltar.ics','text/calendar',icsFile());toast('Abra o arquivo para adicionar ao calendário');break;
+    case 'share':
+      var data={title:'Posso Faltar?',text:'Calcule quantas faltas você ainda pode ter:',url:location.href.split('?')[0]};
+      if(navigator.share){navigator.share(data).catch(function(){})}
+      else if(navigator.clipboard){navigator.clipboard.writeText(data.url);toast('Link copiado')}
+      break;
+    case 'export': download('posso-faltar-backup.json','application/json',JSON.stringify(S));break;
+    case 'reset':
+      if(el.dataset.sure){S=defaults();save();render();toast('Dados apagados')}
+      else{el.dataset.sure='1';el.textContent='Toque de novo para confirmar';setTimeout(function(){el.dataset.sure='';el.textContent='Apagar tudo'},3500)}
+      break;
+  }
+});
+document.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.dataset&&t.dataset.base){S.base[t.dataset.base]=Math.max(0,+t.value||0);S.onboarded=true;save();render();return}
+  if(t.id==='lim'){S.limit=Math.max(1,+t.value||16);save();render();return}
+  if(t.id==='rem'){S.reminder=t.value||'22:00';save();return}
+  if(t.id==='sim'){var u=new URL(location.href);if(t.value)u.searchParams.set('hoje',t.value);else u.searchParams.delete('hoje');QS=u.searchParams;history.replaceState(null,'',u);render();return}
+  if(t.id==='imp'&&t.files&&t.files[0]){
+    var fr=new FileReader();fr.onload=function(){try{var r=JSON.parse(fr.result);if(r&&r.v===1){S=r;save();render();toast('Backup restaurado')}else toast('Arquivo inválido')}catch(x){toast('Arquivo inválido')}};fr.readAsText(t.files[0]);
+  }
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSheet()});
+
+render();
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});
+}
+})();
+</script>
+</body>
+</html>
