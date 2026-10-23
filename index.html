@@ -196,8 +196,8 @@ a.btn{text-decoration:none}
 ol.how{padding-left:20px;display:grid;gap:6px;color:var(--muted);font-size:14px}
 
 /* abas */
-.tabs{position:fixed;left:0;right:0;bottom:var(--ios-bar);z-index:30;display:flex;justify-content:center;pointer-events:none}
-.tabs nav{pointer-events:auto;width:100%;max-width:560px;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 6px 8px}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;justify-content:center;pointer-events:none}
+.tabs nav{pointer-events:auto;width:100%;max-width:560px;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 6px calc(8px + var(--ios-bar))}
 .tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;border-radius:12px;font-size:11px;font-weight:700;color:var(--muted);transition:color .2s}
 .tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .tab.on{color:var(--accent)}
@@ -650,7 +650,7 @@ function viewAjustes(){
   CODES.forEach(function(c){h+='<div class="field" style="margin-top:10px"><label>'+SUBJ[c].name+' (opcional)</label><input class="inp" type="url" inputmode="url" data-ava="'+c+'" value="'+esc((S.ava||{})[c]||'')+'" placeholder="https://…"></div>'});
   h+='</div>';
 
-  h+='<h2>Instalar como app</h2><div class="card"><p class="muted" style="margin-bottom:12px">'+(standalone()?'Você já está usando o app instalado.':'Ícone na tela inicial, tela cheia e notificações no iPhone.')+'</p><div class="row"><button class="btn sm" data-act="inst">Ver passo a passo</button><button class="btn sm ghost" data-act="share">Convidar a turma</button></div></div>';
+  h+='<h2>Instalar como app</h2><div class="card"><p class="muted" style="margin-bottom:12px">'+(standalone()?'Você já está usando o app instalado.':'Ícone na tela inicial e tela cheia, como um app de verdade.')+'</p><div class="row"><button class="btn sm" data-act="inst">Ver passo a passo</button><button class="btn sm ghost" data-act="share">Convidar a turma</button></div></div>';
   h+=avisosHtml();
 
   h+='<h2>Seus dados</h2><div class="card"><p class="muted" style="margin-bottom:12px">Tudo fica salvo só neste celular. Se trocar de aparelho, faça um backup.</p><div class="grid2"><button class="btn sm ghost" data-act="export">Fazer backup</button><label class="btn sm ghost" style="cursor:pointer">Restaurar<input type="file" accept="application/json" id="imp" hidden></label></div><button class="btn sm danger block" style="margin-top:10px" data-act="reset">Apagar tudo</button></div>';
@@ -703,11 +703,11 @@ var IC={
 };
 function installBanner(){
   if(standalone()||S.hideInstall||!(IS_IOS||IS_AND))return '';
-  return '<div class="card" style="margin-bottom:12px"><b>Instale como app</b><p class="muted" style="margin:4px 0 12px">Ícone na tela inicial, tela cheia e notificações. Leva 30 segundos.</p><div class="row"><button class="btn sm" data-act="inst">Ver como</button><button class="btn sm ghost" data-act="hideinst">Agora não</button></div></div>';
+  return '<div class="card" style="margin-bottom:12px"><b>Instale como app</b><p class="muted" style="margin:4px 0 12px">Ícone na tela inicial e tela cheia, como um app de verdade. Leva 30 segundos.</p><div class="row"><button class="btn sm" data-act="inst">Ver como</button><button class="btn sm ghost" data-act="hideinst">Agora não</button></div></div>';
 }
 function installHtml(plat){
   plat=plat||(IS_AND?'and':'ios');
-  var h='<h3 style="font-size:20px;letter-spacing:-.02em;margin-bottom:4px">Instalar na tela inicial</h3><p class="muted" style="margin-bottom:14px">Vira um app de verdade: abre em tela cheia, com o seu ícone. No iPhone, só recebe notificação depois de instalar.</p>';
+  var h='<h3 style="font-size:20px;letter-spacing:-.02em;margin-bottom:4px">Instalar na tela inicial</h3><p class="muted" style="margin-bottom:14px">Vira um app de verdade: abre em tela cheia, com o seu ícone.</p>';
   if(standalone())return h+'<div class="alert ok">Já está instalado. É só abrir pelo ícone na tela inicial.</div>';
   h+='<div class="seg" style="margin:0 0 14px"><button class="'+(plat==='ios'?'on go':'')+'" data-act="instab" data-p="ios">iPhone</button><button class="'+(plat==='and'?'on go':'')+'" data-act="instab" data-p="and">Android</button></div>';
   if(inApp())h+='<div class="alert warn" style="margin-bottom:14px">Parece que você abriu por dentro de outro app (WhatsApp, Instagram…). Ali não dá para instalar. Toque em '+IC.dots+' ou no ícone de compartilhar e escolha <b>Abrir no '+(plat==='ios'?'Safari':'Chrome')+'</b>.</div>';
@@ -733,6 +733,7 @@ function openInstall(plat){sheetDate=null;sheetKind=null;openSheet(installHtml(p
 
 /* ============ NUVEM: login por e-mail, sincronização e avisos ============ */
 var PFC=window.PF_CONFIG||{};
+var PUSH=!!PFC.VAPID_PUBLIC_KEY;   // notificação no app só aparece quando houver chave VAPID no config.js
 var CL={on:!!(PFC.SUPABASE_URL&&PFC.SUPABASE_ANON_KEY),sb:null,user:null,perfil:null,step:'email',email:'',busy:false};
 var HORAS=[['18:30','Antes da aula (18:30)'],['19:30','Começo da aula (19:30)'],['22:30','Depois da aula (22:30)']];
 var PEND=(function(){var q=new URLSearchParams(location.search);var o={marcar:q.get('marcar'),u:q.get('u'),t:q.get('t'),marcado:q.get('marcado'),erro:q.get('erro')};return (o.marcar||o.marcado||o.erro)?o:null})();
@@ -823,12 +824,12 @@ function avisosSheet(){return '<h3 style="font-size:20px;letter-spacing:-.02em;m
 function avisoBanner(){
   if(!CL.on||!CL.sb)return '';
   if(!CL.user)return '<div class="card" style="margin-bottom:12px"><b>Receba o aviso do dia</b><p class="muted" style="margin:4px 0 12px">Entre com seu e-mail para ser avisado nos dias de aula e marcar a falta com um toque. Sem senha.</p><button class="btn sm" data-act="avisos">Entrar ou criar conta</button></div>';
-  if(CL.perfil&&CL.perfil.canal==='nenhum')return '<div class="card" style="margin-bottom:12px"><b>Escolha como receber o aviso</b><p class="muted" style="margin:4px 0 12px">Por e-mail ou por notificação no celular.</p><button class="btn sm" data-act="avisos">Escolher</button></div>';
+  if(CL.perfil&&CL.perfil.canal==='nenhum')return '<div class="card" style="margin-bottom:12px"><b>Escolha como receber o aviso</b><p class="muted" style="margin:4px 0 12px">Por e-mail, com um botão para marcar a falta.</p><button class="btn sm" data-act="avisos">Escolher</button></div>';
   return '';
 }
 function avisosBody(sfx){
   var h='';
-  if(!CL.on)return '<p class="muted" style="margin-bottom:12px">O aviso do dia ainda não foi ligado neste site. Quando for, você entra com o e-mail (sem senha, só um código) e escolhe como receber: por e-mail ou por notificação no celular. No e-mail vem um botão para marcar a falta com um toque.</p><div class="alert warn">Quem administra o site ainda precisa ligar o servidor dos avisos.</div>';
+  if(!CL.on)return '<p class="muted" style="margin-bottom:12px">O aviso do dia ainda não foi ligado neste site. Quando for, você entra com o e-mail (sem senha, só um código) e recebe o aviso do dia por e-mail, com um botão para marcar a falta com um toque.</p><div class="alert warn">Quem administra o site ainda precisa ligar o servidor dos avisos.</div>';
   if(!CL.sb)return '<p class="muted">Conectando…</p>';
   if(!CL.user){
     h+='<p class="muted" style="margin-bottom:12px">Entre com seu e-mail (ou crie sua conta: é o mesmo passo) para receber o aviso do dia e deixar suas faltas salvas na nuvem, em qualquer aparelho. Sem senha: mandamos um código.</p>';
@@ -836,15 +837,15 @@ function avisosBody(sfx){
     else h+='<div class="field"><label>Seu e-mail</label><input class="inp" id="clEmail'+sfx+'" type="email" inputmode="email" autocomplete="email" placeholder="voce@email.com"></div><button class="btn block" style="margin-top:10px" data-act="cl-send">Receber código</button>';
     return h;
   }
-  var pf=CL.perfil||{canal:'nenhum',hora:'19:30'};
+  var pf=CL.perfil||{canal:'nenhum',hora:'19:30'}, cur=(pf.canal==='push'&&!PUSH)?'nenhum':pf.canal;
   h+='<div class="row"><div><b>Conectado</b><div class="muted" style="font-size:12.5px">'+esc(CL.user.email||'')+'</div></div><div class="sp"></div><button class="btn sm ghost" data-act="cl-out">Sair</button></div>';
   h+='<div class="field" style="margin-top:14px"><label>Seu nome (aparece no aviso)</label><input class="inp" id="clNome'+sfx+'" value="'+esc(S.nome||'')+'" placeholder="Como te chamam?"></div>';
-  h+='<div class="field" style="margin-top:14px"><label>Como quer receber?</label><div class="opts">'+[['email','E-mail'],['push','Notificação no app'],['nenhum','Nenhum']].map(function(o){return '<button class="opt '+(pf.canal===o[0]?'on':'')+'" data-act="canal" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div></div>';
+  h+='<div class="field" style="margin-top:14px"><label>Como quer receber?</label><div class="opts">'+[['email','E-mail']].concat(PUSH?[['push','Notificação no app']]:[]).concat([['nenhum','Nenhum']]).map(function(o){return '<button class="opt '+(cur===o[0]?'on':'')+'" data-act="canal" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div></div>';
   h+='<div class="field" style="margin-top:14px"><label>Que horas?</label><div class="opts">'+HORAS.map(function(o){return '<button class="opt '+(pf.hora===o[0]?'on':'')+'" data-act="hora" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div></div>';
-  if(pf.canal==='push'){
+  if(PUSH&&pf.canal==='push'){
     h+='<div style="margin-top:14px">'+(pushOk()?'<div class="alert ok">Notificações ativadas neste aparelho.</div>':'<button class="btn block" data-act="pushon">Ativar notificações neste aparelho</button>'+((IS_IOS&&!standalone())?'<p class="muted" style="font-size:12.5px;margin-top:8px">No iPhone é preciso instalar o app na tela inicial primeiro.</p>':''))+'</div>';
   }
-  if(pf.canal!=='nenhum')h+='<button class="btn sm ghost block" style="margin-top:14px" data-act="teste">Enviar um aviso de teste agora</button>';
+  if(cur!=='nenhum')h+='<button class="btn sm ghost block" style="margin-top:14px" data-act="teste">Enviar um aviso de teste agora</button>';
   h+='<p class="muted" style="font-size:12.5px;margin-top:12px">Seu e-mail e suas faltas ficam salvos no servidor da turma. Só o aviso diário usa isso.</p>';
   return h;
 }
